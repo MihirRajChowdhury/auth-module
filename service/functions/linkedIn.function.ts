@@ -1,23 +1,23 @@
 import {
   WrappidLogger,
+  ApplicationContext,
 } from "@wrappid/service-core";
 import fetch from "node-fetch-commonjs";
-import constant from "../constants/constants";
-import { CheckUser } from "./soicial.login.function";
 
-/**
- * Get Access Token
- * @param platformToken
- * @param clientId
- * @param clientSecret
- * @param redirectUri
- * @returns
- */
-async function getAccessToken(platformToken:string,clientId:string,clientSecret:string,redirectUri:string):Promise<string>{
+
+async function getAccessToken(platformToken:string){
   try{
+    const clientId =
+    ApplicationContext.getContext("config")?.socialLogin?.linkedin?.apiKey;
+    const clientSecret =
+    ApplicationContext.getContext("config")?.socialLogin?.linkedin
+      ?.apiKeySecret;
+    const redirectUri =
+    ApplicationContext.getContext("config")?.socialLogin?.linkedin
+      ?.callbackURL;
     const tokenUrl = "https://www.linkedin.com/oauth/v2/accessToken";
     const response = await fetch(tokenUrl, {
-      method: constant.httpMethod.HTTP_POST,
+      method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
@@ -30,8 +30,8 @@ async function getAccessToken(platformToken:string,clientId:string,clientSecret:
       }),
     });
     const data: any = await response.json();
+
     if (!data.access_token) {
-      WrappidLogger.error("Unable to generate Access Token");
       throw new Error("Unable to generate Access Token");    
     }
     const token = data.access_token;
@@ -41,24 +41,19 @@ async function getAccessToken(platformToken:string,clientId:string,clientSecret:
     throw error;
   }
 }
-
-/**
- * Get User Details from LinkedIn
- * @param token 
- * @returns 
- */
-async function getUserDetails(token:string):Promise<CheckUser>{
+async function getUserDetails(token:string){
   try{
     const userResponse = await fetch("https://api.linkedin.com/v2/userinfo", {
       headers: {
         Authorization: "Bearer " + token,
       },
     });
+
     if (userResponse.status != 200) {
-      WrappidLogger.error(`Failed to fetch user data: ${userResponse.statusText}`);
       throw new Error(`Failed to fetch user data: ${userResponse.statusText}`);
     }
     const rawData: any = await userResponse.json();
+
     const nameParts = rawData.name.trim().split(" ");
     let firstName = "", middleName = "", lastName = "";
           
@@ -73,7 +68,7 @@ async function getUserDetails(token:string):Promise<CheckUser>{
       middleName = nameParts.slice(1, -1).join(" "); // Everything in the middle
       lastName = nameParts[nameParts.length - 1];
     }
-    const userData: CheckUser = {
+    const userData = {
       firstName: firstName || "",
       middleName: middleName || "", // Default to empty string if middleName is null
       lastName: lastName || "",

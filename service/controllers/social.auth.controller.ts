@@ -10,10 +10,11 @@ import * as socialLoginFunc from "../functions/soicial.login.function";
 */
 export const socialLogin = async (req: any, res: any) => {
   try {
+
     const { platform } = req.params;
-    const { platformToken } = req.body;
+    const { platformToken: authorizationCode } = req.body;
     const deviceId = await getDeviceId(req);
-    const { status, ...resData } = await socialLoginFunc.socialLoginFunc(platform, platformToken, deviceId);
+    const { status, ...resData } = await socialLoginFunc.socialLoginFunc(platform, authorizationCode, deviceId);
     res.status(status).json({...resData});
   } catch (error: any) {
     res.status(500).json({ message: error.message });
